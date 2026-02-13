@@ -16,7 +16,9 @@ class GridViewModel : ViewModel() {
     private val _cells = MutableStateFlow(List(TOTAL_CELLS) { 0 })
     val cells: StateFlow<List<Int>> = _cells.asStateFlow()
 
-    /** Returns true when the cell's value has reached the lock threshold. */
+    private val _tapCount = MutableStateFlow(0)
+    val tapCount: StateFlow<Int> = _tapCount.asStateFlow()
+
     fun isLocked(value: Int): Boolean = value >= LOCK_THRESHOLD
 
     fun onCellClick(index: Int) {
@@ -24,14 +26,13 @@ class GridViewModel : ViewModel() {
 
         val current = _cells.value.toMutableList()
 
-        // Locked cells cannot be clicked
         if (isLocked(current[index])) return
 
-        // 1. Increment the tapped cell
         current[index] = current[index] + 1
         val newValue = current[index]
+        _tapCount.value = _tapCount.value + 1
 
-        // 2. Rule A – divisible by 3 (positive only: 3, 6, 9…) → decrement right neighbor
+        // Rule A – divisible by 3 (positive only: 3, 6, 9…) → decrement right neighbor
         val column = index % GRID_SIZE
         if (newValue > 0 && newValue % 3 == 0 && column < GRID_SIZE - 1) {
             val rightIndex = index + 1
@@ -40,7 +41,7 @@ class GridViewModel : ViewModel() {
             }
         }
 
-        // 3. Rule B – divisible by 5 (positive only: 5, 10…) → increment below neighbor by 2
+        // Rule B – divisible by 5 (positive only: 5, 10…) → increment below neighbor by 2
         val row = index / GRID_SIZE
         if (newValue > 0 && newValue % 5 == 0 && row < GRID_SIZE - 1) {
             val belowIndex = index + GRID_SIZE
@@ -50,5 +51,10 @@ class GridViewModel : ViewModel() {
         }
 
         _cells.value = current
+    }
+
+    fun resetGrid() {
+        _cells.value = List(TOTAL_CELLS) { 0 }
+        _tapCount.value = 0
     }
 }
